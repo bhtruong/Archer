@@ -9,10 +9,13 @@ from db_connection import connect
 directory = "csv"
 extension = ".csv"
 
-csv_paths = {'heroes': "{}/heroes{}".format(directory, extension),
-             'villains': "{}/villains{}".format(directory, extension),
-             'masterminds': "{}/masterminds{}".format(directory, extension),
-             'schemes': "{}/schemes{}".format(directory, extension)}
+csv_paths = {
+    'heroes': "{}/heroes{}".format(directory, extension),
+    'villains': "{}/villains{}".format(directory, extension),
+    'masterminds': "{}/masterminds{}".format(directory, extension),
+    'schemes': "{}/schemes{}".format(directory, extension),
+    'specialRules': "{}/specialRules{}".format(directory, extension)
+}
 
 TABLES = {}
 
@@ -39,6 +42,7 @@ TABLES['Masterminds'] = """
     CREATE TABLE `Masterminds` (
      `Name` varchar(45) NOT NULL,
      `GroupLed` varchar(45) NOT NULL,
+     `LeadsHenchmanGroup` varchar(45) NOT NULL,
      `CardSet` varchar (45) NOT NULL,
      PRIMARY KEY (`Name`, `CardSet`)
     ) ENGINE=InnoDB
@@ -54,6 +58,19 @@ TABLES['Schemes'] = """
      PRIMARY KEY (`Name`, `CardSet`)
     ) ENGINE=InnoDB
     """
+
+TABLES['SpecialRules'] = """
+    CREATE TABLE `SpecialRules` (
+     `Scheme` varchar(45) NOT NULL,
+     `HeroInVillainDeck` varchar(45),
+     `RequiredHero` varchar(45),
+     `NumberOfHeroes` tinyint(255),
+     `SinisterAmbitions` tinyint(2),
+     `TyrantVillains` tinyint(2),
+     `MultipleMasterminds` tinyint(2),
+     `NumberOfPlayers` tinyint(255)
+    ) ENGINE=InnoDB
+"""
 
 
 def create(table):
@@ -81,9 +98,11 @@ def drop(table):
         """
 
     if table != 'all':
+        table_length = len(table)
+        table_name = table[0].upper() + table[1:table_length]
 
-        print("Dropping table: {}".format(table.capitalize()))
-        cursor.execute(sql.format(table.capitalize()))
+        print("Dropping table: {}".format(table_name))
+        cursor.execute(sql.format(table_name))
 
     else:
 
@@ -191,14 +210,15 @@ def create_masterminds(reader):
 
     sql = """
         INSERT INTO Masterminds
-        (Name, GroupLed, CardSet)
-        VALUES (%s, %s, %s)
+        (Name, GroupLed, LeadsHenchmanGroup, CardSet)
+        VALUES (%s, %s, %s, %s)
         """
 
     cursor.execute(TABLES['Masterminds'])
 
     for mastermind in reader:
-        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['CardSet'])
+        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmanGroup'],
+                      mastermind['CardSet'])
 
         print("Inserting {} into Masterminds".format(mastermind['Name']))
         cursor.execute(sql, parameters)
@@ -214,13 +234,13 @@ def update_masterminds(reader):
 
     sql = """
         UPDATE Masterminds
-        SET Name=%s, GroupLed=%s, CardSet=%s
+        SET Name=%s, GroupLed=%s, LeadsHenchmanGroup=%s, CardSet=%s
         WHERE Name=%s AND CardSet=%s
         """
 
     for mastermind in reader:
-        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['CardSet'], mastermind['Name'],
-                      mastermind['CardSet'])
+        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmanGroup'],
+                      mastermind['CardSet'], mastermind['Name'], mastermind['CardSet'])
 
         print("Updating {} in Masterminds".format(mastermind['Name']))
         cursor.execute(sql, parameters)
@@ -276,6 +296,32 @@ def update_schemes(reader):
     cursor.close()
 
 
+def create_specialRules(reader):
+    db_connection = connect()
+    cursor = db_connection.cursor()
+
+    sql = """
+        INSERT INTO SpecialRules
+        (Scheme, HeroInVillainDeck, RequiredHero, NumberOfHeroes, SinisterAmbitions, TyrantVillains,
+         MultipleMasterminds, NumberOfPlayers)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+    cursor.execute(TABLES['SpecialRules'])
+
+    for specialRule in reader:
+        parameters = (specialRule['Scheme'], specialRule['HeroInVillainDeck'], specialRule['RequiredHero'],
+                      specialRule['NumberOfHeroes'], specialRule['SinisterAmbitions'], specialRule['TyrantVillains'],
+                      specialRule['MultipleMasterminds'], specialRule['NumberOfPlayers'])
+
+        print("Inserting {} into SpecialRules".format(specialRule['Scheme']))
+        cursor.execute(sql, parameters)
+
+    db_connection.commit()
+    db_connection.close()
+    cursor.close()
+
+
 def create_tables_file_opener(path):
     with open(path) as csv_file:
         reader = csv.DictReader(csv_file)
@@ -288,6 +334,8 @@ def create_tables_file_opener(path):
             create_masterminds(reader)
         elif path == csv_paths['schemes']:
             create_schemes(reader)
+        elif path == csv_paths['specialRules']:
+            create_specialRules(reader)
 
     csv_file.close()
 
