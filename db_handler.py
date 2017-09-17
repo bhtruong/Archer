@@ -42,7 +42,7 @@ TABLES['Masterminds'] = """
     CREATE TABLE `Masterminds` (
      `Name` varchar(45) NOT NULL,
      `GroupLed` varchar(45) NOT NULL,
-     `LeadsHenchmanGroup` varchar(45) NOT NULL,
+     `LeadsHenchmenGroup` varchar(45) NOT NULL,
      `CardSet` varchar (45) NOT NULL,
      PRIMARY KEY (`Name`, `CardSet`)
     ) ENGINE=InnoDB
@@ -62,13 +62,13 @@ TABLES['Schemes'] = """
 TABLES['SpecialRules'] = """
     CREATE TABLE `SpecialRules` (
      `Scheme` varchar(45) NOT NULL,
+     `NumberOfPlayers` tinyint(255),
      `HeroInVillainDeck` varchar(45),
      `RequiredHero` varchar(45),
      `NumberOfHeroes` tinyint(255),
      `SinisterAmbitions` tinyint(2),
      `TyrantVillains` tinyint(2),
-     `MultipleMasterminds` tinyint(2),
-     `NumberOfPlayers` tinyint(255)
+     PRIMARY KEY (`Scheme`)
     ) ENGINE=InnoDB
 """
 
@@ -210,14 +210,14 @@ def create_masterminds(reader):
 
     sql = """
         INSERT INTO Masterminds
-        (Name, GroupLed, LeadsHenchmanGroup, CardSet)
+        (Name, GroupLed, LeadsHenchmenGroup, CardSet)
         VALUES (%s, %s, %s, %s)
         """
 
     cursor.execute(TABLES['Masterminds'])
 
     for mastermind in reader:
-        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmanGroup'],
+        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmenGroup'],
                       mastermind['CardSet'])
 
         print("Inserting {} into Masterminds".format(mastermind['Name']))
@@ -234,12 +234,12 @@ def update_masterminds(reader):
 
     sql = """
         UPDATE Masterminds
-        SET Name=%s, GroupLed=%s, LeadsHenchmanGroup=%s, CardSet=%s
+        SET Name=%s, GroupLed=%s, LeadsHenchmenGroup=%s, CardSet=%s
         WHERE Name=%s AND CardSet=%s
         """
 
     for mastermind in reader:
-        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmanGroup'],
+        parameters = (mastermind['Name'], mastermind['GroupLed'], mastermind['LeadsHenchmenGroup'],
                       mastermind['CardSet'], mastermind['Name'], mastermind['CardSet'])
 
         print("Updating {} in Masterminds".format(mastermind['Name']))
@@ -302,17 +302,16 @@ def create_specialRules(reader):
 
     sql = """
         INSERT INTO SpecialRules
-        (Scheme, HeroInVillainDeck, RequiredHero, NumberOfHeroes, SinisterAmbitions, TyrantVillains,
-         MultipleMasterminds, NumberOfPlayers)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        (Scheme, NumberOfPlayers, HeroInVillainDeck, RequiredHero, NumberOfHeroes, SinisterAmbitions, TyrantVillains)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
     cursor.execute(TABLES['SpecialRules'])
 
     for specialRule in reader:
-        parameters = (specialRule['Scheme'], specialRule['HeroInVillainDeck'], specialRule['RequiredHero'],
-                      specialRule['NumberOfHeroes'], specialRule['SinisterAmbitions'], specialRule['TyrantVillains'],
-                      specialRule['MultipleMasterminds'], specialRule['NumberOfPlayers'])
+        parameters = (specialRule['Scheme'], specialRule['NumberOfPlayers'], specialRule['HeroInVillainDeck'],
+                      specialRule['RequiredHero'], specialRule['NumberOfHeroes'], specialRule['SinisterAmbitions'],
+                      specialRule['TyrantVillains'])
 
         print("Inserting {} into SpecialRules".format(specialRule['Scheme']))
         cursor.execute(sql, parameters)
